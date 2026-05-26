@@ -1,30 +1,60 @@
-[![CICD](https://github.com/amigoscode/spring-boot-fullstack-professional/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/amigoscode/spring-boot-fullstack-professional/actions/workflows/deploy.yml)
+# DeepThought HRMS - Worker Attendance & Overtime Settlement Engine
 
-https://amigoscode.com/p/full-stack-spring-boot-react
+## Which HRMS I forked and why
+Forked from [amigoscode/spring-boot-fullstack-professional](https://github.com/amigoscode/spring-boot-fullstack-professional) — clean Spring Boot + JPA + PostgreSQL structure, easy to extend without rewriting.
 
-![Cover](https://user-images.githubusercontent.com/40702606/111074799-bdfbcf00-84dc-11eb-98c0-d40a99aa0da7.png)
+## AI Tools Used
+- **Claude (Anthropic)** — schema design, service logic, Redis caching strategy, ticket fixes
+- Used AI to generate boilerplate, then manually reviewed and understood every decision
 
-# Course Description
-Spring Boot allows to take an idea/prototype and turn it into a real thing in matters minutes hours of months and years. A lot of companies use Spring Boot because it's easy to setup, learn and write code very fast without having to setup the low level platform code. Recently, Netflix has decided to switch their entire backend to Spring Boot. This shows that Spring Boot is a must if you are or want to become a software engineer in the Java world.
-This course teaches how to build a full stack application from the ground up and touches on very import concepts used in real live software development. Concepts such as:
+## Setup Instructions
 
-- Spring Boot Backend API
-- Frontend with React.js Hooks and Functions Components
-- Maven Build Tool
-- Databases using Postgres on Docker
-- Spring Data JPA
-- Server and Client Side Error Handling
-- Packaging applications for deployment using Docker and Jib
-- AWS RDS & Elastic Beanstalk
-- Software Deployment Automation with Github Actions
-- Software Deployment Monitoring with Slack
-- Unit and Integration Testing
+### Prerequisites
+- Java 17+
+- Maven
+- Redis (running locally on port 6379)
+- Supabase account
 
-This course focus on teaching you the process needed to build your own apps and deploy to real users using real software development techniques and skills. The skills gained at the end of this can be applied immediately on your own projects, university projects and at your work place.
+### Supabase Setup
+1. Create project at supabase.com
+2. Go to Connect → Transaction pooler (port 6543)
+3. Copy connection string
 
-Have you got what it takes to become a professional software engineer? Cool I'll see you inside. https://amigoscode.com/p/full-stack-spring-boot-react
+### application.properties
+spring.datasource.url=jdbc:postgresql://YOUR-POOLER-URL:6543/postgres?pgbouncer=true
+spring.datasource.username=postgres.YOUR-PROJECT-ID
+spring.datasource.password=YOUR-PASSWORD
 
-![Screenshot 2021-03-11 at 22 56 19](https://user-images.githubusercontent.com/40702606/111074929-5003d780-84dd-11eb-8284-e7c92c7e2905.png)
+### Run
+```bash
+mvn spring-boot:run
+```
+App starts on http://localhost:8080
 
-<img width="773" alt="Screenshot 2021-03-12 at 20 48 48" src="https://user-images.githubusercontent.com/40702606/111074947-627e1100-84dd-11eb-9d3f-85fdbf23e290.png">
+## API Endpoints
 
+### Workers
+- POST /api/workers — create worker
+- GET /api/workers — list all
+
+### Sites
+- POST /api/sites — create site
+- GET /api/sites — list all
+
+### Attendance
+- POST /api/attendance/clock-in
+- POST /api/attendance/clock-out
+- GET /api/attendance/active — served from Redis
+- GET /api/attendance/log?workerId=1&from=2026-01-01T00:00:00&to=2026-12-31T00:00:00
+
+### Overtime
+- GET /api/overtime/summary/{workerId}?month=2026-04
+- POST /api/overtime/settle/{workerId}?month=2026-04
+
+## Design Decisions
+- **Redis TTL 16hrs** — auto-expires missed clock-outs, prevents stale cache
+- **countQuery separate from main query** — fixes N+1 with pagination
+- **@Transactional on settlement** — all-or-nothing, no partial state
+- **Event publisher for SMS** — fires only after successful DB commit
+- **HikariCP tuned for Supabase** — max-lifetime 270s, keepalive 60s to prevent idle drops
+- **CORS externalized** — allowed origins in application.properties, not hardcoded
