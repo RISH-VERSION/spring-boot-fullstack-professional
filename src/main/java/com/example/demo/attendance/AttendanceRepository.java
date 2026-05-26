@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 @Repository
 public interface AttendanceRepository extends JpaRepository<AttendanceLog, Long> {
 
-    @Query(value = "SELECT a FROM AttendanceLog a WHERE a.worker.id = :workerId AND a.clockIn >= :from AND a.clockIn <= :to",
-            countQuery = "SELECT count(a) FROM AttendanceLog a WHERE a.worker.id = :workerId AND a.clockIn >= :from AND a.clockIn <= :to")
+    @Query(value = "SELECT a FROM AttendanceLog a JOIN FETCH a.worker JOIN FETCH a.site " +
+            "WHERE a.worker.id = :workerId AND a.clockIn >= :from AND a.clockIn <= :to",
+            countQuery = "SELECT count(a) FROM AttendanceLog a " +
+                    "WHERE a.worker.id = :workerId AND a.clockIn >= :from AND a.clockIn <= :to")
     Page<AttendanceLog> findByWorkerAndDateRange(
             @Param("workerId") Long workerId,
             @Param("from") LocalDateTime from,
