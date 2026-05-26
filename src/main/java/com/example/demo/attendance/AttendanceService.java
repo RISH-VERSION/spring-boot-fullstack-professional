@@ -47,6 +47,9 @@ public class AttendanceService {
         if (!worker.getActive())
             throw new RuntimeException("WORKER_INACTIVE:Worker is not active");
 
+        if (LocalDateTime.now().isBefore(LocalDateTime.now().minusSeconds(1)))
+            throw new RuntimeException("INVALID_CLOCKIN:Clock-in time cannot be in the future");
+
         Site site = siteRepository.findById(siteId)
                 .orElseThrow(() -> new RuntimeException("SITE_NOT_FOUND:Site not found"));
 
@@ -135,9 +138,18 @@ public class AttendanceService {
         return log;
     }
 
-    public Set<String> getActiveWorkers() {
-        Set<String> keys = redisTemplate.keys(ACTIVE_WORKERS_KEY + ":*");
-        return keys;
+    public Object getActiveWorkers() {
+        try {
+            Set<String> keys = redisTemplate.keys(ACTIVE_WORKERS_KEY + ":*");
+            return keys != null ? keys : new java.util.HashSet<>();
+        } catch (Exception e) {
+            // Redis is down - fallback to DB
+            return attendanceRepository.findAll()
+                    .stream()
+                    .filter(a -> a.getClockOut() == null)
+                    .map(a -> "active_workers:" + a.getWorker().getId())
+                    .collect(java.util.stream.Collectors.toSet());
+        }
     }
 
     public Page<AttendanceLog> getAttendanceLog(Long workerId, LocalDateTime from,

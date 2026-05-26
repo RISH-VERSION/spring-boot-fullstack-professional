@@ -45,10 +45,10 @@ public class AttendanceController {
 
     @GetMapping("/active")
     public ResponseEntity<?> getActiveWorkers() {
-        Set<String> activeWorkers = attendanceService.getActiveWorkers();
+        Object activeWorkers = attendanceService.getActiveWorkers();
         return ResponseEntity.ok(Map.of(
                 "activeWorkers", activeWorkers,
-                "count", activeWorkers != null ? activeWorkers.size() : 0
+                "count", ((java.util.Set<?>) activeWorkers).size()
         ));
     }
 
