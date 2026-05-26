@@ -42,4 +42,7 @@ public class Student {
         this.email = email;
         this.gender = gender;
     }
+    public String getEmail() {
+        return email;
+    }
 }
